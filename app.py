@@ -1,21 +1,17 @@
 import os
 import streamlit as st
-
-st.write("API KEY exists:", bool(os.getenv("OPENAI_API_KEY")))
-
-
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
-import os
-import streamlit as st
 
 # .env ファイルを読み込む
 load_dotenv()
 
 # 環境変数を取得する
 api_key = os.getenv("OPENAI_API_KEY")
+
+
 
 # 1) 専門家ラベル（ラジオボタン候補）
 EXPERT_OPTIONS = [
@@ -41,25 +37,45 @@ SYSTEM_PROMPTS = {
 
 DEFAULT_SYSTEM_PROMPT = "あなたは親切なアシスタントです。わかりやすく答えてください。"
 
+
 def get_system_message(expert_type:str) -> str:
   return SYSTEM_PROMPTS.get(expert_type,DEFAULT_SYSTEM_PROMPT)
 
-def get_llm_response(user_text: str, expert_type:str) -> str:
-  if not user_text.strip():
-    return "入力が空です。質問を入力してください"
-  try:
-    system_message = get_system_message(expert_type)
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_message),
-            ("human", "{input}"),
-        ]
-    )
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
-    chain = prompt | llm | StrOutputParser()
-    return chain.invoke({"input": user_text})
-  except Exception as e:
-    return f"エラーが発生しました{e}"
+def get_llm_response(user_text: str, expert_type: str) -> str:
+    """
+    LLMに対してユーザーの入力を送信し、レスポンスを取得する関数。
+
+    指定された専門家タイプに応じたシステムメッセージを生成し、
+    OpenAIのGPT-4o-miniモデルを使用してユーザーの質問に対する
+    回答を取得します。
+
+    Args:
+        user_text (str): ユーザーからの入力テキスト（質問など）
+        expert_type (str): 専門家のタイプ（システムメッセージの決定に使用）
+
+    Returns:
+        str: LLMからのレスポンステキスト。
+             入力が空の場合は警告メッセージ、
+             エラー発生時はエラーメッセージを返す。
+
+    Raises:
+        なし（例外は内部で処理され、エラーメッセージとして返される）
+    """
+    if not user_text.strip():
+        return "入力が空です。質問を入力してください"
+    try:
+        system_message = get_system_message(expert_type)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_message),
+                ("human", "{input}"),
+            ]
+        )
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5, api_key=api_key)
+        chain = prompt | llm | StrOutputParser()
+        return chain.invoke({"input": user_text})
+    except Exception as e:
+        return f"エラーが発生しました{e}"
 st.title("専門家アドバイザー")
 
 selected_item = st.radio("専門家を選んでください", EXPERT_OPTIONS)
