@@ -1,3 +1,9 @@
+import os
+import streamlit as st
+
+st.write("API KEY exists:", bool(os.getenv("OPENAI_API_KEY")))
+
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
